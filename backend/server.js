@@ -75,6 +75,20 @@ app.post('/signup', async (req, res) => {
     });
 });
 
+app.post('/signin', (req, res) => {
+    const { email, password } = req.body;
+    db.get(SELECT * FROM users WHERE email = ?, [email], async (err, user) => {
+        if (err) {
+            res.status(500).send({ message: 'Error during sign-in', error: err.message });
+        } else if (user && await bcrypt.compare(password, user.password)) {
+            const token = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: '1h' });
+            res.status(200).send({ message: 'Login successful', token });
+        } else {
+            res.status(401).send({ message: 'Invalid credentials' });
+        }
+    });
+});
+
 
 app.use(cors());
 app.use(bodyParser.json());
