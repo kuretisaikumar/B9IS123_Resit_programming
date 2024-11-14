@@ -62,6 +62,20 @@ const db = new sqlite3.Database('./data/pet_adoption.db', (err) => {
 
 });
 
+// User endpoints
+app.post('/signup', async (req, res) => {
+    const { email, username, password } = req.body;
+    const hashedPassword = await bcrypt.hash(password, 10);
+    db.run(INSERT INTO users (email, username, password) VALUES (?, ?, ?), [email, username, hashedPassword], (err) => {
+        if (err) {
+            res.status(400).send({ message: 'Error creating account', error: err.message });
+        } else {
+            res.status(201).send({ message: 'Account created successfully' });
+        }
+    });
+});
+
+
 app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, '../frontend')));
