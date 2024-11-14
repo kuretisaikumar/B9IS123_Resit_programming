@@ -66,7 +66,7 @@ const db = new sqlite3.Database('./data/pet_adoption.db', (err) => {
 app.post('/signup', async (req, res) => {
     const { email, username, password } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
-    db.run(INSERT INTO users (email, username, password) VALUES (?, ?, ?), [email, username, hashedPassword], (err) => {
+    db.run('INSERT INTO users (email, username, password) VALUES (?, ?, ?)', [email, username, hashedPassword], (err) => {
         if (err) {
             res.status(400).send({ message: 'Error creating account', error: err.message });
         } else {
@@ -77,7 +77,7 @@ app.post('/signup', async (req, res) => {
 
 app.post('/signin', (req, res) => {
     const { email, password } = req.body;
-    db.get(SELECT * FROM users WHERE email = ?, [email], async (err, user) => {
+    db.get(SELECT * FROM ,users ,WHERE ,email = ?, [email], async (err, user) => {
         if (err) {
             res.status(500).send({ message: 'Error during sign-in', error: err.message });
         } else if (user && await bcrypt.compare(password, user.password)) {
@@ -89,7 +89,7 @@ app.post('/signin', (req, res) => {
     });
 });
 
-/ Middleware for verifying JWT
+// Middleware for verifying JWT
 function authenticateToken(req, res, next) {
     const token = req.headers['authorization'];
     if (!token) return res.status(401).send({ message: 'Access Denied' });
@@ -100,6 +100,34 @@ function authenticateToken(req, res, next) {
         next();
     });
 }
+
+// Pet endpoints
+app.get('/pets', (req, res) => {
+    db.all('SELECT * FROM pets', [], (err, rows) => {
+        if (err) {
+            res.status(500).send({ message: 'Error fetching pets', error: err.message });
+        } else {
+            res.status(200).send(rows);
+        }
+    });
+});
+
+app.get('/pets/:id', (req, res) => {
+    const petId = req.params.id; // Extract the pet ID from the request parameters
+
+    db.get('SELECT * FROM pets WHERE id = ?', [petId], (err, row) => {
+        if (err) {
+            console.error('Error fetching pet details:', err.message);
+            res.status(500).send({ message: 'Error fetching pet details' });
+        } else if (!row) {
+            res.status(404).send({ message: 'Pet not found' });
+        } else {
+            res.status(200).send(row);
+        }
+    });
+});
+
+
 
 
 
