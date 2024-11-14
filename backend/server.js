@@ -89,6 +89,19 @@ app.post('/signin', (req, res) => {
     });
 });
 
+/ Middleware for verifying JWT
+function authenticateToken(req, res, next) {
+    const token = req.headers['authorization'];
+    if (!token) return res.status(401).send({ message: 'Access Denied' });
+
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+        if (err) return res.status(403).send({ message: 'Invalid Token' });
+        req.user = user;
+        next();
+    });
+}
+
+
 
 app.use(cors());
 app.use(bodyParser.json());
