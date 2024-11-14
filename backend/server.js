@@ -1,28 +1,65 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
 const app = express();
 const db = new sqlite3.Database('./database/pets.db');
 const path = require('path');
 
+//secret for JWT 
+const JWT_SECRET = 'your_jwt_secret';
+
+// Middleware
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static('public'));
+
 
 // Initialize database
-db.serialize(() => {
-    db.run(`CREATE TABLE IF NOT EXISTS pets (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        age INTEGER,
-        breed TEXT,
-        status TEXT CHECK(status IN ('Available', 'Adopted', 'Fostered')),
-        description TEXT
-    )`);
+// SQLite database setup
+const db = new sqlite3.Database('./data/pet_adoption.db', (err) => {
+    if (err) {
+        console.error('Error opening database:', err.message);
+    } else {
+        console.log('Connected to SQLite database');
+        
     db.run(`CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE,
-        password TEXT,
-        role TEXT CHECK(role IN ('admin', 'user')) NOT NULL DEFAULT 'user'
+        email TEXT NOT NULL UNIQUE,
+        username TEXT NOT NULL,
+        password TEXT NOT NULL,
+        name TEXT,
+        contact_info TEXT,
+        address TEXT
     )`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS pets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        breed TEXT,
+        age INTEGER,
+        size TEXT,
+        health_status TEXT,
+        vaccination_details TEXT,
+        image TEXT,
+        status TEXT DEFAULT 'Available'
+    )`);
+
+
+    db.run(`CREATE TABLE IF NOT EXISTS adoption_requests (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        pet_id INTEGER,
+        reason TEXT,
+        status TEXT DEFAULT 'Pending',
+        FOREIGN KEY(user_id) REFERENCES users(id),
+        FOREIGN KEY(pet_id) REFERENCES pets(id)
+    )`);
+}
+
+
 });
 
 app.use(cors());
