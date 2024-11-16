@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .profile-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .profile-container h1 {
+            font-size: 1.5rem;
+            color: #007bff;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .profile-container form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .profile-container form label {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .profile-container form input {
+            padding: 10px;
+            font-size: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .profile-container form button {
+            padding: 10px;
+            font-size: 1rem;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .profile-container form button:hover {
+            background-color: #0056b3;
+        }
+
+        .profile-container .note {
+            font-size: 0.9rem;
+            color: #6c757d;
+            text-align: center;
+        }
+
+        .profile-container .logout-btn {
+            margin-top: 15px;
+            background-color: #dc3545;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .profile-container .logout-btn:hover {
+            background-color: #bd2130;
+        }
+    </style>
+</head>
+<body>
+    <div class="profile-container">
+        <h1>User Profile</h1>
+        <form id="profile-form">
+            <label>Name:
+                <input type="text" name="name" required>
+            </label>
+            <label>Contact Info:
+                <input type="text" name="contact_info" required>
+            </label>
+            <label>Address:
+                <input type="text" name="address" required>
+            </label>
+            <button type="submit">Update Profile</button>
+        </form>
+        <button class="logout-btn" onclick="logoutUser()">Logout</button>
+        <p class="note">Your details are pre-filled from your current profile.</p>
+    </div>
+    <script>
+    </script>
+</body>
+</html>
