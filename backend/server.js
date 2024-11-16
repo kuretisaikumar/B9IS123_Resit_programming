@@ -5,7 +5,6 @@ const jwt = require('jsonwebtoken');
 const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
 const app = express();
-const db = new sqlite3.Database('./database/pets.db');
 const path = require('path');
 
 //secret for JWT 
@@ -77,7 +76,7 @@ app.post('/signup', async (req, res) => {
 
 app.post('/signin', (req, res) => {
     const { email, password } = req.body;
-    db.get(SELECT * FROM ,users ,WHERE ,email = ?, [email], async (err, user) => {
+    db.get('SELECT * FROM ,users ,WHERE ,email = ?', [email], async (err, user) => {
         if (err) {
             res.status(500).send({ message: 'Error during sign-in', error: err.message });
         } else if (user && await bcrypt.compare(password, user.password)) {
