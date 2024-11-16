@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Pets</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="./css/manage_pets.css">
+                                                                
+</head>
+<body>
+    <header>
+        <h1>Manage Pets</h1>
+    </header>
+    <nav>
+        <a href="admin_dashboard.html">Dashboard</a>
+        <a href="manage_requests.html">Manage Adoption Requests</a>
+        <a href="login.html" onclick="logout()">Logout</a>
+    </nav>
+    <main>
+        <form id="add-pet-form">
+            <h3>Add New Pet</h3>
+            <label>Name: <input type="text" name="name" required></label>
+            <label>Breed: <input type="text" name="breed" required></label>
+            <label>Age: <input type="number" name="age" required></label>
+            <label>Size: <input type="text" name="size" required></label>
+            <label>Health Status: <input type="text" name="health_status" required></label>
+            <label>Vaccination Details: <input type="text" name="vaccination_details" required></label>
+            <label>Image URL: <input type="text" name="image" placeholder="Enter image URL"></label>
+            <label>Description: <input type="text" name="description" required></label>
+            <button type="submit">Add Pet</button>
+        </form>
+        <h3>Existing Pets</h3>
+        <table id="pets-table">
+            <thead>
+                <tr>
+                    <th>Image</th>
+                    <th>Name</th>
+                    <th>Breed</th>
+                    <th>Age</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </main>
+    <script src="./js/manage_pets.js"> </script>
+</body>
+</html>
