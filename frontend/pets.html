@@ -14,6 +14,22 @@
         <div id="pets-list"></div>
     </main>
     <script>
+        fetch('/pets')
+            .then(response => response.json())
+            .then(data => {
+                const petsList = document.getElementById('pets-list');
+                data.forEach(pet => {
+                    const petCard = document.createElement('div');
+                    petCard.innerHTML = `
+                        <h3>${pet.name} (${pet.breed})</h3>
+                        <img src="${pet.image}" alt="${pet.name}" width="200">
+                        <p>Age: ${pet.age}</p>
+                        <p>Status: ${pet.status}</p>
+                    `;
+                    petsList.appendChild(petCard);
+                });
+            });
+        
     </script>
 </body>
 </html>
