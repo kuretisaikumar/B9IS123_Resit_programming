@@ -105,6 +105,27 @@
         <p class="note">Your details are pre-filled from your current profile.</p>
     </div>
     <script>
+        async function fetchWithAuth(url, options = {}) {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('You need to log in first.');
+                window.location.href = 'login.html';
+                return;
+            }
+            options.headers = {
+                ...options.headers,
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            };
+            const response = await fetch(url, options);
+            if (response.status === 401 || response.status === 403) {
+                alert('Session expired. Please log in again.');
+                localStorage.removeItem('token');
+                window.location.href = 'login.html';
+            }
+            return response.json();
+        }
+        
     </script>
 </body>
 </html>
