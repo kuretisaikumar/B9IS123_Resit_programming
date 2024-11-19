@@ -24,7 +24,22 @@
         </table>
     </main>
     <script>
-        
+        async function loadRequests() {
+            const requests = await fetchWithAuth('/adoption-requests');
+            const tableBody = document.querySelector('#requests-table tbody');
+            tableBody.innerHTML = '';
+            requests.forEach(request => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${request.pet_name}</td>
+                    <td>${request.reason}</td>
+                    <td>${request.status}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        loadRequests();
         
     </script>
 </body>

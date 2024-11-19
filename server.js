@@ -8,7 +8,7 @@ const app = express();
 const path = require('path');
 
 //secret for JWT 
-const JWT_SECRET = 'your_jwt_secret';
+const JWT_SECRET = 'pet_adoption';
 
 // Middleware
 app.use(bodyParser.json());
