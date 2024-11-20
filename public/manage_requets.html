@@ -89,6 +89,81 @@
         </table>
     </main>
     <script>
+        async function fetchWithoutAuth(url, options = {}) {
+            options.headers = {
+                ...options.headers,
+                'Content-Type': 'application/json',
+            };
+
+            const response = await fetch(url, options);
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            return response.json();
+        }
+
+        // Load adoption requests
+        async function loadRequests() {
+            try {
+                const requests = await fetchWithoutAuth('/adoption-requests');
+
+                const tableBody = document.querySelector('#requests-table tbody');
+                tableBody.innerHTML = '';
+
+                if (!requests.length) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = '<td colspan="5">No adoption requests found.</td>';
+                    tableBody.appendChild(row);
+                    return;
+                }
+
+                requests.forEach(request => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${request.username}</td>
+                        <td>${request.pet_name}</td>
+                        <td>${request.reason}</td>
+                        <td>${request.status}</td>
+                        <td>
+                            <button onclick="updateRequestStatus(${request.id}, 'Approved')">Approve</button>
+                            <button class="reject" onclick="updateRequestStatus(${request.id}, 'Rejected')">Reject</button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error loading adoption requests:', error);
+                alert('Failed to load adoption requests. Please try again later.');
+            }
+        }
+
+        // Update request status
+        async function updateRequestStatus(requestId, status) {
+            try {
+                const result = await fetchWithoutAuth(`/update-request/${requestId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ status }),
+                });
+
+                alert(result.message);
+                loadRequests();
+            } catch (error) {
+                console.error('Error updating request status:', error);
+                alert('Failed to update request status.');
+            }
+        }
+
+        // Log out function
+        function logout() {
+            localStorage.removeItem('token');
+            alert('Logged out successfully.');
+            window.location.href = 'login.html';
+        }
+
+        // Load requests on page load
+        loadRequests();
     </script>
 </body>
 </html>
