@@ -125,6 +125,46 @@
             }
             return response.json();
         }
+        async function loadProfile() {
+            try {
+                const profile = await fetchWithAuth('/profile');
+                const form = document.getElementById('profile-form');
+                form.name.value = profile.name || '';
+                form.contact_info.value = profile.contact_info || '';
+                form.address.value = profile.address || '';
+            } catch (error) {
+                console.error('Error loading profile:', error);
+                alert('Could not load profile details. Please try again later.');
+            }
+        }
+
+        document.getElementById('profile-form').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            try {
+                const formData = new FormData(event.target);
+                const result = await fetchWithAuth('/profile', {
+                    method: 'PUT',
+                    body: JSON.stringify(Object.fromEntries(formData)),
+                });
+
+                if (result) {
+                    alert('Profile updated successfully!');
+                    window.location.href = 'index.html'; // Redirect to home page after success
+                }
+            } catch (error) {
+                console.error('Error updating profile:', error);
+                alert('Could not update profile. Please try again later.');
+            }
+        });
+
+        function logoutUser() {
+            localStorage.removeItem('token');
+            alert('Logged out successfully!');
+            window.location.href = 'login.html';
+        }
+
+        // Load profile on page load
+        document.addEventListener('DOMContentLoaded', loadProfile);
         
     </script>
 </body>
