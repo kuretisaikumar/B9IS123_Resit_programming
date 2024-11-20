@@ -43,7 +43,8 @@ const db = new sqlite3.Database('./data/pet_adoption.db', (err) => {
         health_status TEXT,
         vaccination_details TEXT,
         image TEXT,
-        status TEXT DEFAULT 'Available'
+        status TEXT DEFAULT 'Available',
+        description TEXT
     )`);
 
 
@@ -76,7 +77,7 @@ app.post('/signup', async (req, res) => {
 
 app.post('/signin', (req, res) => {
     const { email, password } = req.body;
-    db.get('SELECT * FROM ,users ,WHERE ,email = ?', [email], async (err, user) => {
+    db.get('SELECT * FROM users WHERE email = ?', [email], async (err, user) => {
         if (err) {
             res.status(500).send({ message: 'Error during sign-in', error: err.message });
         } else if (user && await bcrypt.compare(password, user.password)) {
@@ -146,9 +147,10 @@ app.get('/admin', (req, res) => {
 
 // CRUD operations for pets
 app.post('/api/pets', (req, res) => {
-    const { name, age, breed, status, description } = req.body;
-    db.run(`INSERT INTO pets (name, age, breed, status, description) VALUES (?, ?, ?, ?, ?)`,
-        [name, age, breed, status, description], function (err) {
+    const { name, breed, age, size, health_status, vaccination_details, image, description } = req.body;
+    db.run(`INSERT INTO pets (name, breed, age, size, health_status, vaccination_details, image, description) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [name, breed, age, size, health_status, vaccination_details, image, description],  function (err) {
             if (err) return res.status(500).json({ error: err.message });
             res.status(201).json({ id: this.lastID });
         });

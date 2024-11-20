@@ -5,33 +5,119 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .login-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .login-container h1 {
+            font-size: 1.5rem;
+            color: #007bff;
+            margin-bottom: 20px;
+        }
+
+        .login-container form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .login-container form label {
+            text-align: left;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .login-container form input {
+            padding: 10px;
+            font-size: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .login-container form button {
+            padding: 10px;
+            font-size: 1rem;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .login-container form button:hover {
+            background-color: #0056b3;
+        }
+
+        .signup-link {
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        .signup-link a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .signup-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
-    <header>
+    <div class="login-container">
         <h1>Login</h1>
-    </header>
-    <main>
         <form id="login-form">
-            <label>Email: <input type="email" name="email" required></label><br>
-            <label>Password: <input type="password" name="password" required></label><br>
+            <label>Email:
+                <input type="email" name="email" required>
+            </label>
+            <label>Password:
+                <input type="password" name="password" required>
+            </label>
             <button type="submit">Login</button>
         </form>
-    </main>
+        <div class="signup-link">
+            <p>Don't have an account? <a href="signup.html">Sign up here</a></p>
+        </div>
+    </div>
     <script>
         document.getElementById('login-form').addEventListener('submit', async (event) => {
             event.preventDefault();
             const formData = new FormData(event.target);
-            const response = await fetch('/signin', {
-                method: 'POST',
-                body: JSON.stringify(Object.fromEntries(formData)),
-                headers: { 'Content-Type': 'application/json' },
-            });
-            const result = await response.json();
-            if (result.token) {
-                localStorage.setItem('token', result.token);
-                alert('Login successful');
-            } else {
-                alert(result.message);
+            try {
+                const response = await fetch('/signin', {
+                    method: 'POST',
+                    body: JSON.stringify(Object.fromEntries(formData)),
+                    headers: { 'Content-Type': 'application/json' },
+                });
+                const result = await response.json();
+
+                if (result.token) {
+                    localStorage.setItem('token', result.token);
+                    alert('Login successful');
+                    window.location.href = 'index.html'; // Redirect to home page
+                } else {
+                    alert(result.message);
+                }
+            } catch (error) {
+                console.error('Error during login:', error);
+                alert('Login failed. Please try again.');
             }
         });
     </script>

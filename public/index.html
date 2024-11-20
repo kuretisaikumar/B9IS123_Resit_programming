@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Pet Adoption Management</title>
-    <link rel="stylesheet" href="css/styles.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pet Adoption System</title>
+    <link rel="stylesheet" href="style.css">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -76,18 +77,57 @@
         .pet-card button:hover {
             background-color: #0056b3;
         }
-
     </style>
 </head>
 <body>
-<h1>Pet Adoption System</h1>
-<div>
-    <h2>Available Pets</h2>
-    <table id="petsTable">
-        <tr><th>ID</th><th>Name</th><th>Age</th><th>Breed</th><th>Status</th><th>Description</th></tr>
-    </table>
-</div>
+    <header>
+        <h1>Welcome to the Pet Adoption System</h1>
+        <nav>
+            <a href="signup.html">Sign Up</a>
+            <a href="login.html">Login</a>
+            <a href="profile.html">Profile</a>
+            <a href="adoption_requests.html">Adoption Requests</a>
+        </nav>
+    </header>
+    <main>
+        <h2>Find Your Perfect Pet Companion</h2>
+        <div class="pet-gallery" id="pet-gallery"></div>
+    </main>
+    <script>
+        async function loadPets() {
+            try {
+                const response = await fetch('/pets');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch pets');
+                }
+                const pets = await response.json();
 
-<script src="js/main.js"></script>
+                const gallery = document.getElementById('pet-gallery');
+                gallery.innerHTML = ''; // Clear previous entries
+
+                pets.forEach(pet => {
+                    const petCard = document.createElement('div');
+                    petCard.className = 'pet-card';
+                    petCard.innerHTML = `
+                        <img src="${pet.image || 'images/placeholder.jpg'}" alt="${pet.name}">
+                        <h3>${pet.name}</h3>
+                        <p>${pet.breed}</p>
+                        <button onclick="viewPetDetails(${pet.id})">View Details</button>
+                    `;
+                    gallery.appendChild(petCard);
+                });
+            } catch (error) {
+                console.error('Error loading pets:', error);
+                alert('Failed to load pets. Please try again later.');
+            }
+        }
+
+        function viewPetDetails(petId) {
+            window.location.href = `pet_details.html?id=${petId}`;
+        }
+
+        // Load pets on page load
+        loadPets();
+    </script>
 </body>
 </html>
