@@ -1,72 +1,66 @@
+
 const express = require('express');
+const sqlite3 = require('sqlite3').verbose();
 const bodyParser = require('body-parser');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const sqlite3 = require('sqlite3').verbose();
-const cors = require('cors');
 const app = express();
-const path = require('path');
+const port = 3000;
 
-//secret for JWT 
-const JWT_SECRET = 'pet_adoption';
+// Secret for JWT
+const JWT_SECRET = 'your_jwt_secret';
 
 // Middleware
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
-
-// Initialize database
 // SQLite database setup
 const db = new sqlite3.Database('./data/pet_adoption.db', (err) => {
     if (err) {
         console.error('Error opening database:', err.message);
     } else {
         console.log('Connected to SQLite database');
-        
-    db.run(`CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        email TEXT NOT NULL UNIQUE,
-        username TEXT NOT NULL,
-        password TEXT NOT NULL,
-        name TEXT,
-        contact_info TEXT,
-        address TEXT
-    )`);
+        db.run(`CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email TEXT NOT NULL UNIQUE,
+            username TEXT NOT NULL,
+            password TEXT NOT NULL,
+            name TEXT,
+            contact_info TEXT,
+            address TEXT
+        )`);
 
-    db.run(`CREATE TABLE IF NOT EXISTS pets (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT,
-        breed TEXT,
-        age INTEGER,
-        size TEXT,
-        health_status TEXT,
-        vaccination_details TEXT,
-        image TEXT,
-        status TEXT DEFAULT 'Available',
-        description TEXT
-    )`);
+        db.run(`CREATE TABLE IF NOT EXISTS pets (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT,
+            breed TEXT,
+            age INTEGER,
+            size TEXT,
+            health_status TEXT,
+            vaccination_details TEXT,
+            image TEXT,
+            status TEXT DEFAULT 'Available',
+            Description Text
+        )`);
 
-
-    db.run(`CREATE TABLE IF NOT EXISTS adoption_requests (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER,
-        pet_id INTEGER,
-        reason TEXT,
-        status TEXT DEFAULT 'Pending',
-        FOREIGN KEY(user_id) REFERENCES users(id),
-        FOREIGN KEY(pet_id) REFERENCES pets(id)
-    )`);
-}
-
-
+        db.run(`CREATE TABLE IF NOT EXISTS adoption_requests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            pet_id INTEGER,
+            reason TEXT,
+            status TEXT DEFAULT 'Pending',
+            FOREIGN KEY(user_id) REFERENCES users(id),
+            FOREIGN KEY(pet_id) REFERENCES pets(id)
+        )`);
+    }
 });
 
 // User endpoints
 app.post('/signup', async (req, res) => {
     const { email, username, password } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
-    db.run('INSERT INTO users (email, username, password) VALUES (?, ?, ?)', [email, username, hashedPassword], (err) => {
+    db.run(`INSERT INTO users (email, username, password,name,contact_info,address) VALUES (?, ?, ?, ?, ?,?)`, [email, username, hashedPassword], (err) => {
         if (err) {
             res.status(400).send({ message: 'Error creating account', error: err.message });
         } else {
@@ -77,7 +71,7 @@ app.post('/signup', async (req, res) => {
 
 app.post('/signin', (req, res) => {
     const { email, password } = req.body;
-    db.get('SELECT * FROM users WHERE email = ?', [email], async (err, user) => {
+    db.get(`SELECT * FROM users WHERE email = ?`, [email], async (err, user) => {
         if (err) {
             res.status(500).send({ message: 'Error during sign-in', error: err.message });
         } else if (user && await bcrypt.compare(password, user.password)) {
@@ -92,18 +86,25 @@ app.post('/signin', (req, res) => {
 // Middleware for verifying JWT
 function authenticateToken(req, res, next) {
     const token = req.headers['authorization'];
-    if (!token) return res.status(401).send({ message: 'Access Denied' });
+    if (!token) {
+        console.error('No token provided');
+        return res.status(401).send({ message: 'Access Denied' });
+    }
 
-    jwt.verify(token, JWT_SECRET, (err, user) => {
-        if (err) return res.status(403).send({ message: 'Invalid Token' });
+    jwt.verify(token.split(' ')[1], JWT_SECRET, (err, user) => { // Ensure "Bearer <token>" is split
+        if (err) {
+            console.error('Invalid Token:', err.message);
+            return res.status(403).send({ message: 'Invalid Token' });
+        }
         req.user = user;
         next();
     });
 }
 
+
 // Pet endpoints
 app.get('/pets', (req, res) => {
-    db.all('SELECT * FROM pets', [], (err, rows) => {
+    db.all(`SELECT * FROM pets`, [], (err, rows) => {
         if (err) {
             res.status(500).send({ message: 'Error fetching pets', error: err.message });
         } else {
@@ -115,7 +116,7 @@ app.get('/pets', (req, res) => {
 app.get('/pets/:id', (req, res) => {
     const petId = req.params.id; // Extract the pet ID from the request parameters
 
-    db.get('SELECT * FROM pets WHERE id = ?', [petId], (err, row) => {
+    db.get(`SELECT * FROM pets WHERE id = ?`, [petId], (err, row) => {
         if (err) {
             console.error('Error fetching pet details:', err.message);
             res.status(500).send({ message: 'Error fetching pet details' });
@@ -127,68 +128,159 @@ app.get('/pets/:id', (req, res) => {
     });
 });
 
+app.post('/add-pet', authenticateToken, (req, res) => {
+    console.log('Request received:', req.body);
+    console.log('Authenticated user:', req.user);
 
-
-
-
-app.use(cors());
-app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname, '../frontend')));
-
-// Serve the frontend index.html at the root URL
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/index.html'));
-});
-
-// Serve the admin panel
-app.get('/admin', (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/admin.html'));
-});
-
-// CRUD operations for pets
-app.post('/api/pets', (req, res) => {
     const { name, breed, age, size, health_status, vaccination_details, image, description } = req.body;
-    db.run(`INSERT INTO pets (name, breed, age, size, health_status, vaccination_details, image, description) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [name, breed, age, size, health_status, vaccination_details, image, description],  function (err) {
-            if (err) return res.status(500).json({ error: err.message });
-            res.status(201).json({ id: this.lastID });
+    if (!name || !breed || !age || !size || !health_status || !vaccination_details || !image || !description) {
+        return res.status(400).send({ message: 'All fields are required.' });
+    }
+
+    db.run(
+        `INSERT INTO pets (name, breed, age, size, health_status, vaccination_details, image, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [name, breed, age, size, health_status, vaccination_details, image, description],
+        (err) => {
+            if (err) {
+                console.error('Database error:', err.message);
+                return res.status(500).send({ message: 'Failed to add pet.' });
+            }
+            res.status(201).send({ message: 'Pet added successfully!' });
+        }
+    );
+});
+
+
+app.put('/update-pet/:id', authenticateToken, (req, res) => {
+    const { id } = req.params;
+    const { name, breed, age, size, health_status, vaccination_details, image, status } = req.body;
+    db.run(`UPDATE pets SET name = ?, breed = ?, age = ?, size = ?, health_status = ?, vaccination_details = ?, image = ?, status = ? WHERE id = ?, Description=?`,
+        [name, breed, age, size, health_status, vaccination_details, image, status, id,Description], (err) => {
+            if (err) {
+                res.status(400).send({ message: 'Error updating pet', error: err.message });
+            } else {
+                res.status(200).send({ message: 'Pet updated successfully' });
+            }
         });
 });
 
-app.get('/api/pets', (req, res) => {
-    db.all(`SELECT * FROM pets`, [], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(rows);
+app.delete('/delete-pet/:id', authenticateToken, (req, res) => {
+    const { id } = req.params;
+    db.run(`DELETE FROM pets WHERE id = ?`, [id], (err) => {
+        if (err) {
+            res.status(400).send({ message: 'Error deleting pet', error: err.message });
+        } else {
+            res.status(200).send({ message: 'Pet deleted successfully' });
+        }
     });
 });
 
-app.put('/api/pets/:id', (req, res) => {
-    const { name, age, breed, status, description } = req.body;
-    db.run(`UPDATE pets SET name = ?, age = ?, breed = ?, status = ?, description = ? WHERE id = ?`,
-        [name, age, breed, status, description, req.params.id], function (err) {
-            if (err) return res.status(500).json({ error: err.message });
-            res.json({ updated: this.changes });
-        });
+// Add Adoption Request
+app.post('/adopt', (req, res) => {
+    const { pet_id, reason, user_id } = req.body; // Assuming user_id is sent in the request
+    if (!pet_id || !reason || !user_id) {
+        return res.status(400).send({ message: 'Missing required fields' });
+    }
+    db.run(
+        `INSERT INTO adoption_requests (user_id, pet_id, reason) VALUES (?, ?, ?)`,
+        [user_id, pet_id, reason],
+        (err) => {
+            if (err) {
+                res.status(400).send({ message: 'Error submitting adoption request', error: err.message });
+            } else {
+                res.status(201).send({ message: 'Adoption request submitted successfully' });
+            }
+        }
+    );
 });
 
-app.delete('/api/pets/:id', (req, res) => {
-    db.run(`DELETE FROM pets WHERE id = ?`, req.params.id, function (err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ deleted: this.changes });
+// Fetch Adoption Requests
+app.get('/adoption-requests', (req, res) => {
+    db.all(
+        `SELECT ar.id, ar.reason, ar.status, u.username, p.name as pet_name 
+        FROM adoption_requests ar
+        JOIN users u ON ar.user_id = u.id
+        JOIN pets p ON ar.pet_id = p.id`,
+        [],
+        (err, rows) => {
+            if (err) {
+                res.status(500).send({ message: 'Error fetching adoption requests', error: err.message });
+            } else {
+                res.status(200).send(rows);
+            }
+        }
+    );
+});
+
+// Update Adoption Request Status
+app.put('/update-request/:id', (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!status) {
+        return res.status(400).send({ message: 'Status is required' });
+    }
+
+    db.run(
+        `UPDATE adoption_requests SET status = ? WHERE id = ?`,
+        [status, id],
+        (err) => {
+            if (err) {
+                res.status(400).send({ message: 'Error updating request', error: err.message });
+            } else {
+                res.status(200).send({ message: 'Adoption request updated successfully' });
+            }
+        }
+    );
+});
+
+
+// Profile Management
+// Fetch Profile
+app.get('/profile', authenticateToken, (req, res) => {
+    const user_id = req.user?.id; // Ensure `user.id` exists
+    if (!user_id) {
+        return res.status(400).send({ message: 'User ID is missing in the token' });
+    }
+
+    db.get(`SELECT * FROM users WHERE id = ?`, [user_id], (err, row) => {
+        if (err) {
+            console.error('Error fetching profile:', err.message);
+            return res.status(500).send({ message: 'Error fetching profile', error: err.message });
+        }
+
+        if (!row) {
+            return res.status(404).send({ message: 'Profile not found' });
+        }
+
+        res.status(200).send(row);
     });
 });
 
-// User authentication (simple example)
-app.post('/api/login', (req, res) => {
-    const { username, password } = req.body;
-    db.get(`SELECT * FROM users WHERE username = ? AND password = ?`, [username, password], (err, user) => {
-        if (err) return res.status(500).json({ error: err.message });
-        if (user) res.json({ success: true, role: user.role });
-        else res.status(401).json({ success: false, message: 'Invalid credentials' });
-    });
+// Update Profile
+app.put('/profile', authenticateToken, (req, res) => {
+    const user_id = req.user?.id; // Ensure `user.id` exists
+    const { name, contact_info, address } = req.body;
+
+    if (!user_id || !name || !contact_info || !address) {
+        return res.status(400).send({ message: 'Missing required fields' });
+    }
+
+    db.run(
+        `UPDATE users SET name = ?, contact_info = ?, address = ? WHERE id = ?`,
+        [name, contact_info, address, user_id],
+        (err) => {
+            if (err) {
+                console.error('Error updating profile:', err.message);
+                return res.status(500).send({ message: 'Error updating profile', error: err.message });
+            }
+
+            res.status(200).send({ message: 'Profile updated successfully' });
+        }
+    );
 });
 
-app.listen(3000, () => {
-    console.log('Server is running on http://localhost:3000');
+// Start the server
+app.listen(port, () => {
+    console.log(`Server running on http://localhost:${port}`);
 });

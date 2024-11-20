@@ -1,6 +1,6 @@
 async function loadPets() {
     try {
-        const response = await fetch('/api/pets', {
+        const response = await fetch('/pets', {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -59,7 +59,7 @@ return response.json();
 
 async function deletePet(petId) {
     try {
-        const result = await fetchWithAuth(`/api/pets/${petId}`, {
+        const result = await fetchWithAuth(`/delete-pet/${petId}`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
@@ -75,7 +75,7 @@ async function deletePet(petId) {
 
 async function updatePetStatus(petId, status) {
     try {
-        const result = await fetchWithAuth(`/api/pets/${petId}`, {
+        const result = await fetchWithAuth(`/update-pet/${petId}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -94,7 +94,7 @@ document.getElementById('add-pet-form').addEventListener('submit', async (event)
     event.preventDefault();
     try {
         const formData = new FormData(event.target);
-        const result = await fetchWithAuth('/api/pets', {
+        const result = await fetchWithAuth('/add-pet', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

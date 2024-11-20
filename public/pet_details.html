@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pet Details</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Pet Details</h1>
+        <nav>
+            <a href="index.html">Home</a>
+            <a href="pets.html">Pets</a>
+            <a href="profile.html">Profile</a>
+        </nav>
+    </header>
+    <main>
+        <div id="pet-details-container">
+            <img id="pet-image" src="" alt="Pet Image" width="300">
+            <h2 id="pet-name"></h2>
+            <p id="pet-breed"></p>
+            <p id="pet-age"></p>
+            <p id="pet-health"></p>
+            <p id="pet-status"></p>
+            <p id="Description"></p>
+            <button id="adopt-pet-btn">Adopt</button>
+        </div>
+    </main>
+    <script>
+        async function loadPetDetails() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const petId = urlParams.get('id');
+            if (!petId) {
+                alert('No pet ID provided!');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/pets/${petId}`);
+                if (!response.ok) {
+                    throw new Error(response.status === 404 ? 'Pet not found' : 'Failed to fetch pet details');
+                }
+                const pet = await response.json();
+
+                document.getElementById('pet-image').src = pet.image || 'images/placeholder.jpg';
+                document.getElementById('pet-name').textContent = `Name: ${pet.name}`;
+                document.getElementById('pet-breed').textContent = `Breed: ${pet.breed}`;
+                document.getElementById('pet-age').textContent = `Age: ${pet.age}`;
+                document.getElementById('pet-health').textContent = `Health Status: ${pet.health_status}`;
+                document.getElementById('pet-status').textContent = `Status: ${pet.status}`;
+                document.getElementById('Description').textContent=`Description: ${pet.Description}`;
+
+                const adoptButton = document.getElementById('adopt-pet-btn');
+                adoptButton.onclick = async () => {
+                    const reason = prompt('Why do you want to adopt this pet?');
+                    if (!reason) {
+                        alert('Adoption reason is required.');
+                        return;
+                    }
+
+                    try {
+                        const adoptionResponse = await fetch('/adopt', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                Authorization: localStorage.getItem('token'),
+                            },
+                            body: JSON.stringify({ pet_id: petId, reason }),
+                        });
+
+                        const adoptionResult = await adoptionResponse.json();
+                        alert(adoptionResult.message);
+                    } catch (error) {
+                        console.error('Error submitting adoption request:', error);
+                        alert('Failed to submit adoption request.');
+                    }
+                };
+            } catch (error) {
+                console.error('Error loading pet details:', error);
+                alert(error.message);
+            }
+        }
+
+        // Load pet details on page load
+        loadPetDetails();
+    </script>
+</body>
+</html>

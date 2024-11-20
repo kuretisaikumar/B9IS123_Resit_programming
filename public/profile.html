@@ -125,6 +125,7 @@
             }
             return response.json();
         }
+
         async function loadProfile() {
             try {
                 const profile = await fetchWithAuth('/profile');
@@ -165,7 +166,7 @@
 
         // Load profile on page load
         document.addEventListener('DOMContentLoaded', loadProfile);
-        
     </script>
 </body>
 </html>
+
