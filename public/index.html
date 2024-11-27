@@ -31,6 +31,19 @@
             padding: 20px;
         }
 
+        .search-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .search-container input {
+            width: 300px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
         .pet-gallery {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -91,39 +104,68 @@
     </header>
     <main>
         <h2>Find Your Perfect Pet Companion</h2>
+        <!-- Search Bar -->
+        <div class="search-container">
+            <input 
+                type="text" 
+                id="searchInput" 
+                placeholder="Search by Name or Breed" 
+                oninput="filterPets()">
+        </div>
         <div class="pet-gallery" id="pet-gallery"></div>
     </main>
     <script>
+        let allPets = []; // Store all pets globally for filtering
+
         async function loadPets() {
             try {
                 const response = await fetch('/pets');
                 if (!response.ok) {
                     throw new Error('Failed to fetch pets');
                 }
-                const pets = await response.json();
+                allPets = await response.json();
 
-                const gallery = document.getElementById('pet-gallery');
-                gallery.innerHTML = ''; // Clear previous entries
-
-                pets.forEach(pet => {
-                    const petCard = document.createElement('div');
-                    petCard.className = 'pet-card';
-                    petCard.innerHTML = `
-                        <img src="${pet.image || 'images/placeholder.jpg'}" alt="${pet.name}">
-                        <h3>${pet.name}</h3>
-                        <p>${pet.breed}</p>
-                        <button onclick="viewPetDetails(${pet.id})">View Details</button>
-                    `;
-                    gallery.appendChild(petCard);
-                });
+                // Display all pets initially
+                displayPets(allPets);
             } catch (error) {
                 console.error('Error loading pets:', error);
                 alert('Failed to load pets. Please try again later.');
             }
         }
 
+        function displayPets(pets) {
+            const gallery = document.getElementById('pet-gallery');
+            gallery.innerHTML = ''; // Clear previous entries
+
+            if (pets.length === 0) {
+                gallery.innerHTML = '<p>No pets found matching your search.</p>';
+                return;
+            }
+
+            pets.forEach(pet => {
+                const petCard = document.createElement('div');
+                petCard.className = 'pet-card';
+                petCard.innerHTML = `
+                    <img src="${pet.image || 'images/placeholder.jpg'}" alt="${pet.name}">
+                    <h3>${pet.name}</h3>
+                    <p>${pet.breed}</p>
+                    <button onclick="viewPetDetails(${pet.id})">View Details</button>
+                `;
+                gallery.appendChild(petCard);
+            });
+        }
+
+        function filterPets() {
+            const searchQuery = document.getElementById('searchInput').value.toLowerCase();
+            const filteredPets = allPets.filter(pet => 
+                (pet.name && pet.name.toLowerCase().includes(searchQuery)) || 
+                (pet.breed && pet.breed.toLowerCase().includes(searchQuery))
+            );
+            displayPets(filteredPets);
+        }
+
         function viewPetDetails(petId) {
-            window.location.href = `pet_details.html?id=${petId}`;
+            window.location.href = pet_details.html?id=${petId};
         }
 
         // Load pets on page load
