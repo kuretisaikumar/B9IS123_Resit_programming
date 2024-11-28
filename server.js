@@ -154,7 +154,7 @@ app.post('/add-pet', authenticateToken, (req, res) => {
 app.put('/update-pet/:id', authenticateToken, (req, res) => {
     const { id } = req.params;
     const { name, breed, age, size, health_status, vaccination_details, image, status } = req.body;
-    db.run(`UPDATE pets SET name = ?, breed = ?, age = ?, size = ?, health_status = ?, vaccination_details = ?, image = ?, status = ? WHERE id = ?, Description=?`,
+    db.run(`UPDATE pets SET name = ?, breed = ?, age = ?, size = ?, health_status = ?, vaccination_details = ?, image = ?, status = ? WHERE id = ?, description=?`,
         [name, breed, age, size, health_status, vaccination_details, image, status, id,Description], (err) => {
             if (err) {
                 res.status(400).send({ message: 'Error updating pet', error: err.message });
@@ -278,6 +278,21 @@ app.put('/profile', authenticateToken, (req, res) => {
             res.status(200).send({ message: 'Profile updated successfully' });
         }
     );
+});
+
+app.get('/pets/:id', (req, res) => {
+    const petId = req.params.id; // Extract the pet ID from the request parameters
+
+    db.get('SELECT * FROM pets WHERE id = ?', [petId], (err, row) => {
+        if (err) {
+            console.error('Error fetching pet details:', err.message);
+            res.status(500).send({ message: 'Error fetching pet details' });
+        } else if (!row) {
+            res.status(404).send({ message: 'Pet not found' });
+        } else {
+            res.status(200).send(row);
+        }
+    });
 });
 
 // Start the server
