@@ -3,43 +3,176 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Adoption Requests</title>
+    <title>Your Adoption Requests</title>
     <link rel="stylesheet" href="style.css">
-    <script src="script.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: #007bff;
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2rem;
+        }
+
+        table {
+            width: 80%;
+            margin: 30px auto;
+            border-collapse: collapse;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        table th, table td {
+            padding: 12px 20px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+
+        table th {
+            background-color: #007bff;
+            color: white;
+            font-size: 1.1rem;
+        }
+
+        table tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        table tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        .status {
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
+
+        .approved {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .rejected {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .pending {
+            background-color: #ffc107;
+            color: white;
+        }
+
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading-spinner.show {
+            display: block;
+        }
+    </style>
 </head>
 <body>
     <header>
-        <h1>Adoption Requests</h1>
+        <h1>Your Adoption Requests</h1>
     </header>
+
     <main>
+        <div class="loading-spinner" id="loading-spinner">
+            <p>Loading...</p>
+        </div>
         <table id="requests-table">
             <thead>
                 <tr>
                     <th>Pet Name</th>
                     <th>Reason</th>
                     <th>Status</th>
+                    <th>User</th> <!-- Added User column -->
                 </tr>
             </thead>
             <tbody></tbody>
         </table>
     </main>
+
     <script>
-        async function loadRequests() {
-            const requests = await fetchWithAuth('/adoption-requests');
-            const tableBody = document.querySelector('#requests-table tbody');
-            tableBody.innerHTML = '';
-            requests.forEach(request => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${request.pet_name}</td>
-                    <td>${request.reason}</td>
-                    <td>${request.status}</td>
-                `;
-                tableBody.appendChild(row);
-            });
+        // Check if user is authenticated
+        function isAuthenticated() {
+            return localStorage.getItem('token') !== null;
         }
 
-        loadRequests();
+        // Redirect to login page if not authenticated
+        if (!isAuthenticated()) {
+            window.location.href = 'login.html';
+        }
+
+        // Fetch with authentication
+        async function fetchWithAuth(url, options = {}) {
+            const token = localStorage.getItem('token');
+            options.headers = {
+                ...options.headers,
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            };
+
+            const response = await fetch(url, options);
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            return response.json();
+        }
+
+        // Load adoption requests
+        async function loadRequests() {
+            document.getElementById('loading-spinner').classList.add('show'); // Show loading spinner
+
+            try {
+                const requests = await fetchWithAuth('/adoption-requests');
+                const tableBody = document.querySelector('#requests-table tbody');
+                tableBody.innerHTML = ''; // Clear previous data
+
+                if (!requests.length) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = '<td colspan="4">No adoption requests found.</td>'; // Updated colspan to 4
+                    tableBody.appendChild(row);
+                    return;
+                }
+
+                requests.forEach(request => {
+                    const row = document.createElement('tr');
+                    const statusClass = request.status.toLowerCase();
+                    row.innerHTML = `
+                        <td>${request.pet_name}</td>
+                        <td>${request.reason}</td>
+                        <td><span class="status ${statusClass}">${request.status}</span></td>
+                        <td>${request.username}</td> <!-- Added User column -->
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error loading adoption requests:', error);
+                alert('Failed to load adoption requests. Please try again later.');
+            } finally {
+                document.getElementById('loading-spinner').classList.remove('show'); // Hide loading spinner
+            }
+        }
+
+        loadRequests(); // Initial call to load the adoption requests
     </script>
 </body>
 </html>
