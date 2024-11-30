@@ -71,17 +71,28 @@ app.post('/signup', async (req, res) => {
 
 app.post('/signin', (req, res) => {
     const { email, password } = req.body;
+
+    // Query the database for the user by email
     db.get(`SELECT * FROM users WHERE email = ?`, [email], async (err, user) => {
         if (err) {
             res.status(500).send({ message: 'Error during sign-in', error: err.message });
         } else if (user && await bcrypt.compare(password, user.password)) {
+            // Generate a JWT token for the user
             const token = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: '1h' });
-            res.status(200).send({ message: 'Login successful', token });
+
+            // Send the token and user_id in the response
+            res.status(200).send({
+                message: 'Login successful',
+                token: token,      // JWT token
+                user_id: user.id   // Include the user_id
+                
+            });
         } else {
             res.status(401).send({ message: 'Invalid credentials' });
         }
     });
 });
+
 
 // Middleware for verifying JWT
 function authenticateToken(req, res, next) {
@@ -154,7 +165,7 @@ app.post('/add-pet', authenticateToken, (req, res) => {
 app.put('/update-pet/:id', authenticateToken, (req, res) => {
     const { id } = req.params;
     const { name, breed, age, size, health_status, vaccination_details, image, status } = req.body;
-    db.run(`UPDATE pets SET name = ?, breed = ?, age = ?, size = ?, health_status = ?, vaccination_details = ?, image = ?, status = ? WHERE id = ?, description=?`,
+    db.run(`UPDATE pets SET name = ?, breed = ?, age = ?, size = ?, health_status = ?, vaccination_details = ?, image = ?, status = ? WHERE id = ?, Description=?`,
         [name, breed, age, size, health_status, vaccination_details, image, status, id,Description], (err) => {
             if (err) {
                 res.status(400).send({ message: 'Error updating pet', error: err.message });
@@ -195,22 +206,31 @@ app.post('/adopt', (req, res) => {
 });
 
 // Fetch Adoption Requests
-app.get('/adoption-requests', (req, res) => {
+app.get('/adoption-requests', authenticateToken, (req, res) => {
+    const userId = req.user.id; // Get the authenticated user's ID from the token
+
     db.all(
-        `SELECT ar.id, ar.reason, ar.status, u.username, p.name as pet_name 
+        `SELECT ar.id, ar.reason, ar.status, u.username, p.name as pet_name
         FROM adoption_requests ar
         JOIN users u ON ar.user_id = u.id
-        JOIN pets p ON ar.pet_id = p.id`,
-        [],
+        JOIN pets p ON ar.pet_id = p.id
+        WHERE ar.user_id = ?`, // Filter by the authenticated user's ID
+        [userId], // Pass the user ID as a parameter to the query
         (err, rows) => {
             if (err) {
-                res.status(500).send({ message: 'Error fetching adoption requests', error: err.message });
-            } else {
-                res.status(200).send(rows);
+                return res.status(500).send({ message: 'Error fetching adoption requests', error: err.message });
             }
+            
+            if (rows.length === 0) {
+                return res.status(200).send([]); // Return an empty array if no requests are found
+            }
+            
+            // Return the adoption requests for the authenticated user
+            res.status(200).send(rows);
         }
     );
 });
+
 
 // Update Adoption Request Status
 app.put('/update-request/:id', (req, res) => {
@@ -280,22 +300,8 @@ app.put('/profile', authenticateToken, (req, res) => {
     );
 });
 
-app.get('/pets/:id', (req, res) => {
-    const petId = req.params.id; // Extract the pet ID from the request parameters
-
-    db.get('SELECT * FROM pets WHERE id = ?', [petId], (err, row) => {
-        if (err) {
-            console.error('Error fetching pet details:', err.message);
-            res.status(500).send({ message: 'Error fetching pet details' });
-        } else if (!row) {
-            res.status(404).send({ message: 'Pet not found' });
-        } else {
-            res.status(200).send(row);
-        }
-    });
-});
-
 // Start the server
 app.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`);
 });
+
