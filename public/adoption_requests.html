@@ -3,176 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your Adoption Requests</title>
+    <title>Pet Details</title>
     <link rel="stylesheet" href="style.css">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f8f9fa;
-            margin: 0;
-            padding: 0;
-        }
-
-        header {
-            background-color: #007bff;
-            color: white;
-            padding: 1.5rem;
-            text-align: center;
-        }
-
-        header h1 {
-            margin: 0;
-            font-size: 2rem;
-        }
-
-        table {
-            width: 80%;
-            margin: 30px auto;
-            border-collapse: collapse;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        table th, table td {
-            padding: 12px 20px;
-            text-align: center;
-            border: 1px solid #ddd;
-        }
-
-        table th {
-            background-color: #007bff;
-            color: white;
-            font-size: 1.1rem;
-        }
-
-        table tr:nth-child(even) {
-            background-color: #f2f2f2;
-        }
-
-        table tr:hover {
-            background-color: #f1f1f1;
-        }
-
-        .status {
-            font-weight: bold;
-            padding: 5px 10px;
-            border-radius: 4px;
-        }
-
-        .approved {
-            background-color: #28a745;
-            color: white;
-        }
-
-        .rejected {
-            background-color: #dc3545;
-            color: white;
-        }
-
-        .pending {
-            background-color: #ffc107;
-            color: white;
-        }
-
-        .loading-spinner {
-            display: none;
-            text-align: center;
-            padding: 20px;
-        }
-
-        .loading-spinner.show {
-            display: block;
-        }
-    </style>
 </head>
 <body>
     <header>
-        <h1>Your Adoption Requests</h1>
+        <h1>Pet Details</h1>
+        <nav>
+            <a href="index.html">Home</a>
+            <a href="pets.html">Pets</a>
+            <a href="profile.html">Profile</a>
+        </nav>
     </header>
-
     <main>
-        <div class="loading-spinner" id="loading-spinner">
-            <p>Loading...</p>
+        <div id="pet-details-container">
+            <img id="pet-image" src="" alt="Pet Image" width="300">
+            <h2 id="pet-name"></h2>
+            <p id="pet-breed"></p>
+            <p id="pet-age"></p>
+            <p id="pet-health"></p>
+            <p id="pet-status"></p>
+            <p id="Description"></p>
+            <button id="adopt-pet-btn">Adopt</button>
         </div>
-        <table id="requests-table">
-            <thead>
-                <tr>
-                    <th>Pet Name</th>
-                    <th>Reason</th>
-                    <th>Status</th>
-                    <th>User</th> <!-- Added User column -->
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
     </main>
-
     <script>
-        // Check if user is authenticated
-        function isAuthenticated() {
-            return localStorage.getItem('token') !== null;
-        }
-
-        // Redirect to login page if not authenticated
-        if (!isAuthenticated()) {
-            window.location.href = 'login.html';
-        }
-
-        // Fetch with authentication
-        async function fetchWithAuth(url, options = {}) {
-            const token = localStorage.getItem('token');
-            options.headers = {
-                ...options.headers,
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
-            };
-
-            const response = await fetch(url, options);
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+        async function loadPetDetails() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const petId = urlParams.get('id');
+            if (!petId) {
+                alert('No pet ID provided!');
+                return;
             }
-
-            return response.json();
-        }
-
-        // Load adoption requests
-        async function loadRequests() {
-            document.getElementById('loading-spinner').classList.add('show'); // Show loading spinner
-
+    
             try {
-                const requests = await fetchWithAuth('/adoption-requests');
-                const tableBody = document.querySelector('#requests-table tbody');
-                tableBody.innerHTML = ''; // Clear previous data
-
-                if (!requests.length) {
-                    const row = document.createElement('tr');
-                    row.innerHTML = '<td colspan="4">No adoption requests found.</td>'; // Updated colspan to 4
-                    tableBody.appendChild(row);
-                    return;
+                const response = await fetch(`/pets/${petId}`);
+                if (!response.ok) {
+                    throw new Error(response.status === 404 ? 'Pet not found' : 'Failed to fetch pet details');
                 }
-
-                requests.forEach(request => {
-                    const row = document.createElement('tr');
-                    const statusClass = request.status.toLowerCase();
-                    row.innerHTML = `
-                        <td>${request.pet_name}</td>
-                        <td>${request.reason}</td>
-                        <td><span class="status ${statusClass}">${request.status}</span></td>
-                        <td>${request.username}</td> <!-- Added User column -->
-                    `;
-                    tableBody.appendChild(row);
-                });
+                const pet = await response.json();
+    
+                document.getElementById('pet-image').src = pet.image || 'images/placeholder.jpg';
+                document.getElementById('pet-name').textContent = `Name: ${pet.name}`;
+                document.getElementById('pet-breed').textContent = `Breed: ${pet.breed}`;
+                document.getElementById('pet-age').textContent = `Age: ${pet.age}`;
+                document.getElementById('pet-health').textContent = `Health Status: ${pet.health_status}`;
+                document.getElementById('pet-status').textContent = `Status: ${pet.status}`;
+                document.getElementById('Description').textContent = `Description: ${pet.Description}`;
+    
+                const adoptButton = document.getElementById('adopt-pet-btn');
+                adoptButton.onclick = async () => {
+                    const userId = localStorage.getItem('user_id'); // Assuming user ID is stored in localStorage
+                    if (!userId) {
+                        alert('You must be logged in to adopt a pet.');
+                        return;
+                    }
+    
+                    const reason = prompt('Why do you want to adopt this pet?');
+                    if (!reason) {
+                        alert('Adoption reason is required.');
+                        return;
+                    }
+    
+                    try {
+                        const adoptionResponse = await fetch('/adopt', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ pet_id: petId, reason, user_id: userId }), // Pass user_id here
+                        });
+    
+                        const adoptionResult = await adoptionResponse.json();
+                        alert(adoptionResult.message);
+                    } catch (error) {
+                        console.error('Error submitting adoption request:', error);
+                        alert('Failed to submit adoption request.');
+                    }
+                };
             } catch (error) {
-                console.error('Error loading adoption requests:', error);
-                alert('Failed to load adoption requests. Please try again later.');
-            } finally {
-                document.getElementById('loading-spinner').classList.remove('show'); // Hide loading spinner
+                console.error('Error loading pet details:', error);
+                alert(error.message);
             }
         }
-
-        loadRequests(); // Initial call to load the adoption requests
+    
+        // Load pet details on page load
+        loadPetDetails();
     </script>
+    
 </body>
 </html>
