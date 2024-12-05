@@ -7,8 +7,9 @@
     <link rel="stylesheet" href="style.css">
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f8f9fa;
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: #333;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -18,16 +19,16 @@
 
         .login-container {
             background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2);
+            padding: 30px;
             width: 100%;
             max-width: 400px;
             text-align: center;
         }
 
         .login-container h1 {
-            font-size: 1.5rem;
+            font-size: 2rem;
             color: #007bff;
             margin-bottom: 20px;
         }
@@ -35,30 +36,38 @@
         .login-container form {
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 20px;
         }
 
         .login-container form label {
-            text-align: left;
             font-weight: bold;
-            color: #333;
+            text-align: left;
+            color: #555;
+            font-size: 0.95rem;
         }
 
         .login-container form input {
-            padding: 10px;
+            padding: 12px;
             font-size: 1rem;
             border: 1px solid #ddd;
-            border-radius: 4px;
+            border-radius: 6px;
+            transition: border-color 0.3s;
+        }
+
+        .login-container form input:focus {
+            outline: none;
+            border-color: #007bff;
         }
 
         .login-container form button {
-            padding: 10px;
+            padding: 12px;
             font-size: 1rem;
             background-color: #007bff;
             color: white;
             border: none;
-            border-radius: 4px;
+            border-radius: 6px;
             cursor: pointer;
+            transition: background-color 0.3s;
         }
 
         .login-container form button:hover {
@@ -66,17 +75,39 @@
         }
 
         .signup-link {
-            margin-top: 10px;
-            font-size: 0.9rem;
+            margin-top: 15px;
+            font-size: 0.95rem;
+            color: #666;
         }
 
         .signup-link a {
             color: #007bff;
             text-decoration: none;
+            font-weight: bold;
         }
 
         .signup-link a:hover {
             text-decoration: underline;
+        }
+
+        .divider {
+            margin: 15px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: "";
+            flex: 1;
+            border-bottom: 1px solid #ddd;
+            margin: 0 10px;
+        }
+
+        .divider span {
+            font-size: 0.9rem;
+            color: #666;
         }
     </style>
 </head>
@@ -84,42 +115,72 @@
     <div class="login-container">
         <h1>Login</h1>
         <form id="login-form">
-            <label>Email:
-                <input type="email" name="email" required>
+            <label for="email">Email:
+                <input type="email" name="email" id="email" required>
             </label>
-            <label>Password:
-                <input type="password" name="password" required>
+            <label for="password">Password:
+                <input type="password" name="password" id="password" required>
             </label>
             <button type="submit">Login</button>
         </form>
+        <div class="divider"><span>or</span></div>
         <div class="signup-link">
             <p>Don't have an account? <a href="signup.html">Sign up here</a></p>
         </div>
     </div>
+
     <script>
         document.getElementById('login-form').addEventListener('submit', async (event) => {
-            event.preventDefault();
-            const formData = new FormData(event.target);
-            try {
-                const response = await fetch('/signin', {
-                    method: 'POST',
-                    body: JSON.stringify(Object.fromEntries(formData)),
-                    headers: { 'Content-Type': 'application/json' },
-                });
-                const result = await response.json();
-
-                if (result.token) {
-                    localStorage.setItem('token', result.token);
-                    alert('Login successful');
-                    window.location.href = 'index.html'; // Redirect to home page
-                } else {
-                    alert(result.message);
-                }
-            } catch (error) {
-                console.error('Error during login:', error);
-                alert('Login failed. Please try again.');
-            }
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    try {
+        const response = await fetch('/signin', {
+            method: 'POST',
+            body: JSON.stringify(Object.fromEntries(formData)),
+            headers: { 'Content-Type': 'application/json' },
         });
+        const result = await response.json();
+
+        if (result.token) {
+            // Store the token and role as before
+            localStorage.setItem('token', result.token);
+            localStorage.setItem('role', result.role);
+            localStorage.setItem('name',result.name)
+
+            // Store the user ID
+            const userId = result.user_id; // Extract user_id from the response
+            if (userId) {
+                localStorage.setItem('user_id', userId); // Store the user ID
+            } else {
+                alert('User ID is missing from the response.');
+            }
+
+            // Store the user's name
+            const userName = result.name; // Extract user name from the response
+            if (userName) {
+                localStorage.setItem('user_name', userName); // Store the user's name
+            } else {
+                alert('User name is missing from the response.');
+            }
+
+            // Check role and redirect accordingly
+            const userRole = result.role; // Extract role from the response
+            if (userRole === 'admin') {
+                window.location.href = 'admin_dashboard.html'; // Redirect to admin dashboard
+            } else {
+                window.location.href = 'home.html'; // Redirect to home page
+            }
+
+            alert('Login successful');
+        } else {
+            alert(result.message);
+        }
+    } catch (error) {
+        console.error('Error during login:', error);
+        alert('Login failed. Please try again.');
+    }
+});
     </script>
+    
 </body>
 </html>
