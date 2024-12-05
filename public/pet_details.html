@@ -5,6 +5,108 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pet Details</title>
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: #007bff; /* Blue color for header */
+            color: white;
+            padding: 1.5rem;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        header nav a {
+            color: white;
+            text-decoration: none;
+            margin: 0 1rem;
+            font-weight: 500;
+        }
+
+        main {
+            max-width: 900px;
+            width: 100%;
+            padding: 2rem;
+            background: white;
+            border-radius: 10px;
+            margin: 2rem auto;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        #pet-details-container {
+            text-align: center;
+        }
+
+        #pet-image {
+            width: 300px;
+            height: 300px;
+            object-fit: cover;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            font-size: 2rem;
+            margin: 1rem 0;
+            color: #333;
+        }
+
+        p {
+            font-size: 1.1rem;
+            margin: 0.5rem 0;
+            color: #666;
+        }
+
+        button {
+            background-color: #007bff; /* Matching the blue theme */
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .disabled {
+            background-color: #ddd;
+            cursor: not-allowed;
+        }
+
+        .login-prompt {
+            margin-top: 1rem;
+            font-size: 1.2rem;
+            color: #f44336; /* Red for login prompt */
+            display: none;
+        }
+
+        .message {
+            text-align: center;
+            margin-top: 2rem;
+            font-size: 1.1rem;
+        }
+
+        .adopted-message {
+            color: #f44336;
+            font-size: 1.2rem;
+            margin-top: 1rem;
+        }
+    </style>
 </head>
 <body>
     <header>
@@ -17,16 +119,19 @@
     </header>
     <main>
         <div id="pet-details-container">
-            <img id="pet-image" src="" alt="Pet Image" width="300">
+            <img id="pet-image" src="images/placeholder.jpg" alt="Pet Image">
             <h2 id="pet-name"></h2>
             <p id="pet-breed"></p>
             <p id="pet-age"></p>
             <p id="pet-health"></p>
             <p id="pet-status"></p>
-            <p id="Description"></p>
-            <button id="adopt-pet-btn">Adopt</button>
+            <p id="pet-description"></p>
+            <button id="adopt-pet-btn" class="disabled" disabled>Adopt</button>
+            <div id="login-prompt" class="login-prompt">You need to be logged in to adopt a pet.</div>
+            <div id="adopted-message" class="adopted-message" style="display: none;">This pet has already been adopted.</div>
         </div>
     </main>
+
     <script>
         async function loadPetDetails() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -44,14 +149,37 @@
                 const pet = await response.json();
 
                 document.getElementById('pet-image').src = pet.image || 'images/placeholder.jpg';
-                document.getElementById('pet-name').textContent = `Name: ${pet.name}`;
+                document.getElementById('pet-name').textContent = pet.name;
                 document.getElementById('pet-breed').textContent = `Breed: ${pet.breed}`;
                 document.getElementById('pet-age').textContent = `Age: ${pet.age}`;
                 document.getElementById('pet-health').textContent = `Health Status: ${pet.health_status}`;
                 document.getElementById('pet-status').textContent = `Status: ${pet.status}`;
-                document.getElementById('Description').textContent=`Description: ${pet.Description}`;
+                document.getElementById('pet-description').textContent = `Description: ${pet.description}`;
 
                 const adoptButton = document.getElementById('adopt-pet-btn');
+                const loginPrompt = document.getElementById('login-prompt');
+                const adoptedMessage = document.getElementById('adopted-message');
+
+                // Check if the pet is available for adoption
+                if (pet.status !== 'Available') {
+                    adoptButton.style.display = 'none'; // Hide adopt button if not available
+                    adoptedMessage.style.display = 'block'; // Show "Already Adopted" message
+                } else {
+                    adoptButton.style.display = 'inline-block'; // Show the button if available
+                }
+
+                // Check if the user is logged in
+                const userId = localStorage.getItem('user_id');
+                if (!userId) {
+                    adoptButton.classList.add('disabled');
+                    adoptButton.disabled = true;
+                    loginPrompt.style.display = 'block';
+                } else {
+                    adoptButton.classList.remove('disabled');
+                    adoptButton.disabled = false;
+                    loginPrompt.style.display = 'none';
+                }
+
                 adoptButton.onclick = async () => {
                     const reason = prompt('Why do you want to adopt this pet?');
                     if (!reason) {
@@ -64,9 +192,8 @@
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
-                                Authorization: localStorage.getItem('token'),
                             },
-                            body: JSON.stringify({ pet_id: petId, reason }),
+                            body: JSON.stringify({ pet_id: petId, reason, user_id: userId }),
                         });
 
                         const adoptionResult = await adoptionResponse.json();
