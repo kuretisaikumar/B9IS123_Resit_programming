@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard</title>
     <link rel="stylesheet" href="style.css">
     <style>
+        /* Styles for the Admin Dashboard */
         header {
             background-color: #007bff;
             color: white;
@@ -19,8 +21,58 @@
             text-decoration: none;
             font-size: 1.2rem;
         }
+
+        main {
+            padding: 20px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+        }
+
+        .stats div {
+            padding: 20px;
+            background: #f1f1f1;
+            border-radius: 8px;
+            text-align: center;
+            width: 30%;
+        }
+
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+
+        table,
+        th,
+        td {
+            border: 1px solid #ddd;
+        }
+
+        th,
+        td {
+            padding: 8px;
+            text-align: center;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
     </style>
 </head>
+
 <body>
     <header>
         <h1>Admin Dashboard</h1>
@@ -32,7 +84,164 @@
     </header>
     <main>
         <h2>Welcome to the Admin Dashboard</h2>
-        <p>Select an option from the navigation menu.</p>
+
+        <!-- Stats Section -->
+        <div class="stats">
+            <div id="total-users">
+                <h3>Total Users</h3>
+                <p id="user-count">Loading...</p>
+            </div>
+            <div id="total-pets">
+                <h3>Total Pets</h3>
+                <p id="pet-count">Loading...</p>
+            </div>
+            <div id="total-requests">
+                <h3>Total Adoption Requests</h3>
+                <p id="request-count">Loading...</p>
+            </div>
+        </div>
+
+        <!-- User Management Section -->
+        <h3>All Users</h3>
+        <table id="user-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- User rows will be inserted here -->
+            </tbody>
+        </table>
     </main>
+
+    <script>
+        // Check if the user is authenticated as an admin
+        function isAdminAuthenticated() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                return false;
+            }
+            // Decode the token and check for the admin role (assuming the role is stored in the token)
+            const decodedToken = JSON.parse(atob(token.split('.')[1])); // Decode JWT
+            return decodedToken.role === 'admin';
+        }
+
+        // Redirect to login page if not an authenticated admin
+        if (!isAdminAuthenticated()) {
+            window.location.href = 'login.html';
+        }
+
+        // Helper function to make fetch requests with authentication
+        async function fetchWithAuth(url, options = {}) {
+            const token = localStorage.getItem('token');
+            options.headers = {
+                ...options.headers,
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            };
+
+            const response = await fetch(url, options);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            return response.json();
+        }
+
+        // Fetch dashboard data and user details
+        async function fetchDashboardData() {
+            try {
+                // Get stats (Total users, Total pets, Total adoption requests)
+                const statsResponse = await fetchWithAuth('/admin/dashboard-stats', {
+                    method: 'GET'
+                });
+
+                document.getElementById('user-count').textContent = statsResponse.total_users;
+                document.getElementById('pet-count').textContent = statsResponse.total_pets;
+                document.getElementById('request-count').textContent = statsResponse.total_requests;
+
+                // Fetch users for the table
+                const usersResponse = await fetchWithAuth('/admin/users', {
+                    method: 'GET'
+                });
+
+                const tableBody = document.querySelector('#user-table tbody');
+                tableBody.innerHTML = ''; // Clear previous table rows
+
+                usersResponse.forEach(user => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${user.id}</td>
+                        <td>${user.name}</td>
+                        <td>${user.email}</td>
+                        <td>${user.role}</td>
+                        <td>
+                            <button onclick="changeRole(${user.id})">Make Admin</button>
+                            <button onclick="deleteUser(${user.id})">Delete</button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error fetching dashboard data:', error);
+                alert('Failed to load dashboard data.');
+            }
+        }
+
+        // Change the role of a user to admin
+        async function changeRole(userId) {
+            if (!isAdminAuthenticated()) {
+                alert('You do not have permission to perform this action.');
+                return;
+            }
+
+            try {
+                const response = await fetchWithAuth(`/admin/users/${userId}/change-role`, {
+                    method: 'PUT'
+                });
+
+                alert(response.message);
+                fetchDashboardData();  // Refresh the data after changing the role
+            } catch (error) {
+                console.error('Error changing user role:', error);
+                alert('Failed to change user role.');
+            }
+        }
+
+        // Delete a user
+        async function deleteUser(userId) {
+            if (!isAdminAuthenticated()) {
+                alert('You do not have permission to perform this action.');
+                return;
+            }
+
+            try {
+                const response = await fetchWithAuth(`/admin/users/${userId}`, {
+                    method: 'DELETE'
+                });
+
+                alert(response.message);
+                fetchDashboardData();  // Refresh the data after deleting the user
+            } catch (error) {
+                console.error('Error deleting user:', error);
+                alert('Failed to delete user.');
+            }
+        }
+
+        // Fetch data when the page loads
+        document.addEventListener('DOMContentLoaded', fetchDashboardData);
+
+        // Logout function
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = 'login.html';
+        }
+    </script>
 </body>
+
 </html>
