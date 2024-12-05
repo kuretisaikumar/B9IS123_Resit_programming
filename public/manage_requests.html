@@ -89,15 +89,32 @@
         </table>
     </main>
     <script>
-        // Fetch without authentication
-        async function fetchWithoutAuth(url, options = {}) {
+        // Check if the user is authenticated and is an admin
+        function isAdminAuthenticated() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                return false;
+            }
+            // Decode the token and check for the admin role (assuming the role is stored in the token)
+            const decodedToken = JSON.parse(atob(token.split('.')[1])); // Decode JWT
+            return decodedToken.role === 'admin';
+        }
+
+        // Redirect to login page if not an authenticated admin
+        if (!isAdminAuthenticated()) {
+            window.location.href = 'login.html';
+        }
+
+        // Fetch with authentication
+        async function fetchWithAuth(url, options = {}) {
+            const token = localStorage.getItem('token');
             options.headers = {
                 ...options.headers,
                 'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
             };
 
             const response = await fetch(url, options);
-
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -108,7 +125,7 @@
         // Load adoption requests
         async function loadRequests() {
             try {
-                const requests = await fetchWithoutAuth('/adoption-requests');
+                const requests = await fetchWithAuth('/manage-requests'); // Admin API for fetching all requests
 
                 const tableBody = document.querySelector('#requests-table tbody');
                 tableBody.innerHTML = '';
@@ -143,7 +160,7 @@
         // Update request status
         async function updateRequestStatus(requestId, status) {
             try {
-                const result = await fetchWithoutAuth(`/update-request/${requestId}`, {
+                const result = await fetchWithAuth(`/update-request/${requestId}`, {
                     method: 'PUT',
                     body: JSON.stringify({ status }),
                 });
