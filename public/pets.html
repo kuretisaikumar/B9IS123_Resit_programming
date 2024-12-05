@@ -4,30 +4,157 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Available Pets</title>
-    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Global Styles */
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+        }
+
+        header {
+            background-color: #007bff; /* Primary color */
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .home-btn {
+            background-color: #007bff;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s ease;
+            margin: 1rem 0;
+            text-decoration: none;
+        }
+
+        .home-btn:hover {
+            background-color: #0056b3;
+        }
+
+        main {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+            padding: 2rem;
+            margin: 2rem auto;
+            max-width: 1200px;
+        }
+
+        .pet-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .pet-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .pet-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .pet-card-content {
+            padding: 1rem;
+        }
+
+        .pet-card h3 {
+            margin: 0;
+            font-size: 1.4rem;
+            color: #333;
+        }
+
+        .pet-card p {
+            margin: 0.5rem 0;
+            color: #555;
+        }
+
+        .status {
+            font-weight: bold;
+            color: #28a745; /* Green for available status */
+        }
+
+        .status.unavailable {
+            color: #dc3545; /* Red for unavailable status */
+        }
+
+        .loading, .message {
+            width: 100%;
+            text-align: center;
+            font-size: 1.2rem;
+            color: #007bff;
+        }
+
+        .loading {
+            margin: 2rem 0;
+        }
+
+        .message {
+            display: none;
+            color: #f44336;
+        }
+    </style>
 </head>
 <body>
     <header>
         <h1>Available Pets</h1>
+        <a href="home.html" class="home-btn">Home</a>
     </header>
     <main>
+        <div id="loading" class="loading">Loading available pets...</div>
+        <div id="message" class="message">No pets available at the moment.</div>
         <div id="pets-list"></div>
     </main>
+
     <script>
         fetch('/pets')
             .then(response => response.json())
             .then(data => {
                 const petsList = document.getElementById('pets-list');
-                data.forEach(pet => {
-                    const petCard = document.createElement('div');
-                    petCard.innerHTML = `
-                        <h3>${pet.name} (${pet.breed})</h3>
-                        <img src="${pet.image}" alt="${pet.name}" width="200">
-                        <p>Age: ${pet.age}</p>
-                        <p>Status: ${pet.status}</p>
-                    `;
-                    petsList.appendChild(petCard);
-                });
+                const loading = document.getElementById('loading');
+                const message = document.getElementById('message');
+
+                loading.style.display = 'none';
+
+                if (data.length === 0) {
+                    message.style.display = 'block';
+                } else {
+                    data.forEach(pet => {
+                        const petCard = document.createElement('div');
+                        petCard.classList.add('pet-card');
+                        petCard.innerHTML = `
+                            <img src="${pet.image}" alt="${pet.name}">
+                            <div class="pet-card-content">
+                                <h3>${pet.name} (${pet.breed})</h3>
+                                <p>Age: ${pet.age}</p>
+                                <p class="status ${pet.status === 'Available' ? '' : 'unavailable'}">${pet.status}</p>
+                            </div>
+                        `;
+                        petCard.onclick = () => {
+                            window.location.href = `pet_details.html?id=${pet.id}`; // Navigate to the pet details page
+                        };
+                        petsList.appendChild(petCard);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching pets:', error);
+                const message = document.getElementById('message');
+                message.style.display = 'block';
+                message.textContent = 'Failed to load pets. Please try again later.';
             });
     </script>
 </body>
