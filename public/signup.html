@@ -73,6 +73,20 @@
         .signup-container form button:hover {
             background-color: #0056b3;
         }
+
+        .login-link {
+            margin-top: 20px;
+        }
+
+        .login-link a {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .login-link a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -85,6 +99,9 @@
             <label>Username:
                 <input type="text" name="username" required>
             </label>
+            <label>Name:
+                <input type="text" name="name" required>
+            </label>
             <label>Password:
                 <input type="password" name="password" required>
             </label>
@@ -96,18 +113,34 @@
             </label>
             <button type="submit">Sign Up</button>
         </form>
+
+        <!-- Link to redirect to the login page if already signed up -->
+        <div class="login-link">
+            <p>Already have an account? <a href="login.html">Log in here</a></p>
+        </div>
     </div>
+
     <script>
         document.getElementById('signup-form').addEventListener('submit', async (event) => {
             event.preventDefault();
             const formData = new FormData(event.target);
+
+            // Sending signup request to the server
             const response = await fetch('/signup', {
                 method: 'POST',
                 body: JSON.stringify(Object.fromEntries(formData)),
                 headers: { 'Content-Type': 'application/json' },
             });
             const result = await response.json();
+
             alert(result.message);
+
+            // If sign up is successful, redirect to the login page
+            if (response.ok) {
+                setTimeout(() => {
+                    window.location.href = 'login.html'; // Redirect to login page
+                }, 1000); // 1 second delay
+            }
         });
     </script>
 </body>
