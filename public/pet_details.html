@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -19,7 +20,8 @@
         }
 
         header {
-            background-color: #007bff; /* Blue color for header */
+            background-color: #007bff;
+            /* Blue color for header */
             color: white;
             padding: 1.5rem;
             width: 100%;
@@ -69,7 +71,8 @@
         }
 
         button {
-            background-color: #007bff; /* Matching the blue theme */
+            background-color: #007bff;
+            /* Matching the blue theme */
             color: white;
             padding: 1rem 2rem;
             border: none;
@@ -91,7 +94,8 @@
         .login-prompt {
             margin-top: 1rem;
             font-size: 1.2rem;
-            color: #f44336; /* Red for login prompt */
+            color: #f44336;
+            /* Red for login prompt */
             display: none;
         }
 
@@ -108,12 +112,12 @@
         }
     </style>
 </head>
+
 <body>
     <header>
         <h1>Pet Details</h1>
         <nav>
-            <a href="index.html">Home</a>
-            <a href="pets.html">Pets</a>
+            <a href="home.html">Home</a>
             <a href="profile.html">Profile</a>
         </nav>
     </header>
@@ -128,7 +132,8 @@
             <p id="pet-description"></p>
             <button id="adopt-pet-btn" class="disabled" disabled>Adopt</button>
             <div id="login-prompt" class="login-prompt">You need to be logged in to adopt a pet.</div>
-            <div id="adopted-message" class="adopted-message" style="display: none;">This pet has already been adopted.</div>
+            <div id="adopted-message" class="adopted-message" style="display: none;">This pet has already been adopted.
+            </div>
         </div>
     </main>
 
@@ -169,8 +174,9 @@
                 }
 
                 // Check if the user is logged in
+                const token = localStorage.getItem('token');
                 const userId = localStorage.getItem('user_id');
-                if (!userId) {
+                if (!userId || !token) {
                     adoptButton.classList.add('disabled');
                     adoptButton.disabled = true;
                     loginPrompt.style.display = 'block';
@@ -213,4 +219,5 @@
         loadPetDetails();
     </script>
 </body>
+
 </html>
