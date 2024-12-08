@@ -18,6 +18,9 @@
             color: white;
             padding: 1rem;
             text-align: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         header nav a {
@@ -25,6 +28,20 @@
             margin: 0 15px;
             text-decoration: none;
             font-size: 1.2rem;
+        }
+
+        header button {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        header button:hover {
+            background-color: #c82333;
         }
 
         main {
@@ -90,17 +107,29 @@
         .pet-card button:hover {
             background-color: #0056b3;
         }
+
+        .welcome-message {
+            text-align: center;
+            font-size: 1.5rem;
+            color: #333;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
     <header>
         <h1>Welcome to the Pet Adoption System</h1>
         <nav>
-            <a href="signup.html">Sign Up</a>
-            <a href="login.html">Login</a>
+            <a href="profile.html">Profile</a>
+            <a href="adoption_requests.html">Adoption Requests</a>
         </nav>
+        <!-- Logout Button -->
+        <button onclick="logout()">Logout</button>
     </header>
     <main>
+        <!-- Welcome message with user's name -->
+        <div class="welcome-message" id="welcome-message"></div>
+
         <h2>Find Your Perfect Pet Companion</h2>
         <!-- Search Bar -->
         <div class="search-container">
@@ -143,7 +172,7 @@
             pets.forEach(pet => {
                 const petCard = document.createElement('div');
                 petCard.className = 'pet-card';
-                petCard.innerHTML = `
+                petCard.innerHTML = ` 
                     <img src="${pet.image || 'images/placeholder.jpg'}" alt="${pet.name}">
                     <h3>${pet.name}</h3>
                     <p>${pet.breed}</p>
@@ -166,8 +195,31 @@
             window.location.href = `pet_details.html?id=${petId}`;
         }
 
-        // Load pets on page load
+        // Display welcome message with user's name
+        function displayWelcomeMessage() {
+            const userName = localStorage.getItem('name'); // Assuming the username is stored in localStorage
+            const welcomeMessageDiv = document.getElementById('welcome-message');
+
+            if (userName) {
+                welcomeMessageDiv.innerHTML = `Welcome, ${userName}! We are glad to have you here.`;
+            } else {
+                welcomeMessageDiv.innerHTML = 'Welcome to the Pet Adoption System! Browse our pets below.';
+            }
+        }
+
+        // Logout functionality
+        function logout() {
+            // Clear user-related data from localStorage
+            localStorage.removeItem('name');
+            localStorage.removeItem('token'); // Assuming a token is also stored
+
+            // Redirect to the login page
+            window.location.href = 'index.html'; // Make sure you have a login page
+        }
+
+        // Load pets and welcome message on page load
         loadPets();
+        displayWelcomeMessage();
     </script>
 </body>
 </html>
