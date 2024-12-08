@@ -57,8 +57,8 @@ const db = new sqlite3.Database('./data/pet_adoption.db', (err) => {
 
         db.run(`CREATE TABLE IF NOT EXISTS adoption_requests (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER,
-            pet_id INTEGER,
+            user_id INTEGER UNIQUE,
+            pet_id INTEGER UNIQUE,
             reason TEXT,
             status TEXT DEFAULT 'Pending',
             FOREIGN KEY(user_id) REFERENCES users(id),
@@ -66,7 +66,6 @@ const db = new sqlite3.Database('./data/pet_adoption.db', (err) => {
         )`);
     }
 });
-
 
 // User endpoints
 app.post('/signup', async (req, res) => {
@@ -335,21 +334,41 @@ app.delete('/delete-pet/:id', authenticateToken('admin'), (req, res) => {  // 'a
 // Add Adoption Request
 app.post('/adopt', (req, res) => {
     const { pet_id, reason, user_id } = req.body; // Assuming user_id is sent in the request
+
     if (!pet_id || !reason || !user_id) {
         return res.status(400).send({ message: 'Missing required fields' });
     }
-    db.run(
-        `INSERT INTO adoption_requests (user_id, pet_id, reason) VALUES (?, ?, ?)`,
-        [user_id, pet_id, reason],
-        (err) => {
+
+    // Check if the user has already submitted an adoption request for the same pet
+    db.get(
+        `SELECT * FROM adoption_requests WHERE user_id = ? AND pet_id = ?`,
+        [user_id, pet_id],
+        (err, row) => {
             if (err) {
-                res.status(400).send({ message: 'Error submitting adoption request', error: err.message });
-            } else {
-                res.status(201).send({ message: 'Adoption request submitted successfully' });
+                return res.status(400).send({ message: 'Error checking adoption request', error: err.message });
             }
+            
+            // If a request already exists for this pet and user, deny the new request
+            if (row) {
+                return res.status(400).send({ message: 'You have already submitted an adoption request for this pet' });
+            }
+
+            // Otherwise, insert the new adoption request
+            db.run(
+                `INSERT INTO adoption_requests (user_id, pet_id, reason) VALUES (?, ?, ?)`,
+                [user_id, pet_id, reason],
+                (err) => {
+                    if (err) {
+                        return res.status(400).send({ message: 'Error submitting adoption request', error: err.message });
+                    } else {
+                        return res.status(201).send({ message: 'Adoption request submitted successfully' });
+                    }
+                }
+            );
         }
     );
 });
+
 
 // Fetch Adoption Requests
 app.get('/adoption-requests', authenticateToken(), (req, res) => {
@@ -525,7 +544,7 @@ app.get('/manage-requests', authenticateToken('admin'), (req, res) => {
     );
 });
 
-
+module.exports = app;
 // Start the server
 app.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`);
